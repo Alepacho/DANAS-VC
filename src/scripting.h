@@ -1,6 +1,11 @@
 #pragma once
 #include "defs.h"
+#ifdef __linux__
+#include "lua5.3/lua.hpp"
+#else
 #include <lua.hpp>
+#endif
+
 #include "drawing.h"
 
 class scripting {

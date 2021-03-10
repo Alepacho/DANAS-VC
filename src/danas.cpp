@@ -1,4 +1,8 @@
-﻿#include <SDL.h>
+﻿#ifdef __linux__
+#include "SDL2/SDL.h"
+#else
+#include <SDL.h>
+#endif
 
 #include "buffers.h"
 #include "defs.h"
@@ -8,7 +12,7 @@
 #include "editor.h"
 
 //
-std::string title = "DANASM";
+std::string title = "DANAS/VC!";
 
 mouse _mouse;
 keyboard _keyboard;
