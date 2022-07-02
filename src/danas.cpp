@@ -40,7 +40,7 @@ buffers sys_spritemap;	//program sprite map
 +----------+------------------------+-----------------+
 | 0x000000 |						|  192x128		  |
 | ........ |  VRAM (SCREEN BUFFER)  |  or			  |
-| 0x005FFF |						|  ‭24576‬ bytes	  |
+| 0x005FFF |						|  24576 bytes	  |
 +----------+------------------------+-----------------+
 | 0x006000 |					    |  16x3			  |
 | ........ |		 PALETTE		|  or			  |
@@ -67,6 +67,7 @@ bool debug_mode = false;
 byte program_mode = mode::terminal;
 
 //SDL STUFF
+Uint64 ms_interval;
 bool is_working = true;
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -75,7 +76,7 @@ SDL_Texture *screen;
 uint system_tick = 0;
 uint system_tick_last = 0;
 
-int main(int argv, char *argc[]) {
+int main() { // int argv, char *argc[]
 	printf("%s\n", "DANASM");
 
 	//init SDL
@@ -106,6 +107,8 @@ int main(int argv, char *argc[]) {
 	} else printf("%s\n", "CREATE TEXTURE");
 	//
 	SDL_ShowCursor(SDL_DISABLE);
+
+    ms_interval = SDL_GetPerformanceFrequency() / 1000;
 
 	//
 	palette standard;
@@ -172,7 +175,9 @@ int main(int argv, char *argc[]) {
 
 
 	//
+    Uint64 frame_now = SDL_GetPerformanceCounter(), frame_end, frame_interval = SDL_GetPerformanceFrequency() / 60;
 	while (is_working) {
+        frame_end = frame_now + frame_interval;
 
 		//
 		SDL_RenderClear(renderer);
@@ -281,7 +286,7 @@ int main(int argv, char *argc[]) {
 						case mode::edit: {
 							if (editor_code.text.size() > 0) {
 								std::string *line = &editor_code.text[editor_code.line];
-								uint _length = line->length();
+								// uint _length = line->length();
 
 								if (editor_code.col == 0) {			//если колонка в начале
 									if (editor_code.line != 0) {	//если это не первая линия
@@ -325,7 +330,7 @@ int main(int argv, char *argc[]) {
 								editor_code.text.insert(editor_code.text.begin() + editor_code.line + 1, "");
 								//if (editor_code.col < line->length() && line->length() > 0) {	//если строка не пустая и колонка где-то не в конце, то добавляем текст после колонки
 								if ((int)(line->length() - editor_code.col) > 0) {
-									printf("piss len(%i) - col(%i) = %i\n", line->length(), editor_code.col, line->length() - editor_code.col);
+									// printf("piss len(%i) - col(%i) = %i\n", line->length(), editor_code.col, line->length() - editor_code.col);
 									printf("sub: %s\n", line->substr(editor_code.col, line->length() - editor_code.col).c_str());
 
 									std::string *line_next = &editor_code.text[editor_code.line + 1];
@@ -334,8 +339,6 @@ int main(int argv, char *argc[]) {
 									//printf("sub: '%s'\n", _sub.c_str());
 									line_next->insert(0, _sub);
 									line->erase(editor_code.col, line->length() - editor_code.col);
-									
-									
 								}
 
 								editor_code.col = 0;
@@ -480,6 +483,15 @@ int main(int argv, char *argc[]) {
 		SDL_Rect _viewport = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
 		SDL_RenderSetViewport(renderer, &_viewport);
 		SDL_RenderPresent(renderer);
+
+        //
+        frame_now = SDL_GetPerformanceCounter();
+
+        Uint64 delay = frame_end - frame_now;
+        if ((Sint64)delay > 0) {
+            SDL_Delay(delay / ms_interval);
+            frame_now = frame_end;
+        }
 	}
 
 	_console.clean();
@@ -492,7 +504,11 @@ int main(int argv, char *argc[]) {
 	SDL_DestroyTexture(screen);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+
+    // Windows only
+#ifdef _WIN32
 	system("pause");
+#endif
 
 	return 0;
 }
